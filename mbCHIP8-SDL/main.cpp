@@ -3,7 +3,7 @@
 #include <fstream>
 #include <math.h>
 
-#include "cpu.h"
+#include "../libmbCHIP8/cpu.h"
 
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -189,7 +189,7 @@ void UpdateKeyReg(SDL_Event &event, Chip8 &chip)
 
 int main(int argc, char* argv[])
 {
-    cout << "mbCHIP8 v0.1 - (C) 2018 mb-emu Team." << endl;
+    cout << "mbCHIP8 v0.1 - (C) 2019 Buenia." << endl;
     if (argc < 2)
     {
         cout << "Usage: " << argv[0] << " ROM" << endl;

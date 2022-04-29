@@ -22,6 +22,8 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 #include <fstream>
+#include <chrono>
+#include <thread>
 #include <cassert>
 using namespace chip8;
 using namespace std;
@@ -95,7 +97,6 @@ class SDL2Frontend : public mbCHIP8Frontend
 
 	void runcore()
 	{
-	    last_ticks = SDL_GetTicks();
 	    while (!quit)
 	    {
 		runevents();
@@ -168,14 +169,7 @@ class SDL2Frontend : public mbCHIP8Frontend
 	void run_chip()
 	{
 	    main_core.runCore();
-
-	    uint32_t start_ticks = SDL_GetTicks();
-
-	    if ((start_ticks - last_ticks) < 16)
-	    {
-		SDL_Delay(16 - (start_ticks - last_ticks));
-		last_ticks = SDL_GetTicks();
-	    }
+	    this_thread::sleep_for(chrono::microseconds(1200));
 	}
 
 	void drawPixels()
@@ -224,8 +218,6 @@ class SDL2Frontend : public mbCHIP8Frontend
 
 	bool quit = false;
 	SDL_Event event;
-
-	uint32_t last_ticks = 0;
 };
 
 int main(int argc, char* argv[])

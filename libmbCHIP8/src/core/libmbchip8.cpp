@@ -211,14 +211,14 @@ namespace chip8
 	// kk is the lowest 8 bits of the instruction
 	int kk = (instr & 0xFF);
 
-	int instr0_op = (instr & 0xF);
-	int instrF_op = (instr & 0xFF);
+	int instr08_op = (instr & 0xF);
+	int instrEF_op = (instr & 0xFF);
 
 	switch (instr_op)
 	{
 	    case 0x0:
 	    {
-		switch (instr0_op)
+		switch (instr08_op)
 		{
 		    // CLS
 		    case 0x0:
@@ -285,6 +285,18 @@ namespace chip8
 		}
 	    }
 	    break;
+	    // SE Vx, Vy
+	    case 0x5:
+	    {
+		int reg_x = getReg(x);
+		int reg_y = getReg(y);
+
+		if (reg_x == reg_y)
+		{
+		    pc += 2;
+		}
+	    }
+	    break;
 	    // LD VX, byte
 	    case 0x6:
 	    {
@@ -300,11 +312,179 @@ namespace chip8
 		setReg(x, (regx + kk));
 	    }
 	    break;
+	    case 0x8:
+	    {
+		switch (instr08_op)
+		{
+		    // LD Vx, Vy
+		    case 0x0:
+		    {
+			int reg_y = getReg(y);
+
+			// Set Vx to Vy
+			setReg(x, reg_y);
+		    }
+		    break;
+		    // OR Vx, Vy
+		    case 0x1:
+		    {
+			int reg_x = getReg(x);
+			int reg_y = getReg(y);
+
+			// Set Vx to Vx OR Vy
+			setReg(x, (reg_x | reg_y));
+		    }
+		    break;
+		    // AND Vx, Vy
+		    case 0x2:
+		    {
+			int reg_x = getReg(x);
+			int reg_y = getReg(y);
+
+			// Set Vx to Vx AND Vy
+			setReg(x, (reg_x & reg_y));
+		    }
+		    break;
+		    // XOR Vx, Vy
+		    case 0x3:
+		    {
+			int reg_x = getReg(x);
+			int reg_y = getReg(y);
+
+			// Set Vx to Vx XOR Vy
+			setReg(x, (reg_x ^ reg_y));
+		    }
+		    break;
+		    // ADD Vx, Vy
+		    case 0x4:
+		    {
+			int reg_x = getReg(x);
+			int reg_y = getReg(y);
+
+			int result = (reg_x + reg_y);
+
+			// Set VF if (Vx + Vy) > 255
+			if (result > 255)
+			{
+			    setReg(0xF, 1);
+			}
+			else
+			{
+			    setReg(0xF, 0);
+			}
+
+			setReg(x, result);
+		    }
+		    break;
+		    // SUB Vx, Vy
+		    case 0x5:
+		    {
+			int reg_x = getReg(x);
+			int reg_y = getReg(y);
+
+			// Set VF if Vx > Vy
+			if (reg_x > reg_y)
+			{
+			    setReg(0xF, 1);
+			}
+			else
+			{
+			    setReg(0xF, 0);
+			}
+
+			setReg(x, (reg_x - reg_y));
+		    }
+		    break;
+		    // SHR Vx
+		    case 0x6:
+		    {
+			int reg_x = getReg(x);
+
+			// Set VF if bit 0 of Vx is 1
+			if (testbit(reg_x, 0))
+			{
+			    setReg(0xF, 1);
+			}
+			else
+			{
+			    setReg(0xF, 0);
+			}
+
+			// Set Vx equal to (Vx / 2)
+			setReg(x, (reg_x >> 1));
+		    }
+		    break;
+		    // SUBN Vx, Vy
+		    case 0x7:
+		    {
+			int reg_x = getReg(x);
+			int reg_y = getReg(y);
+
+			// Set VF if Vy > Vx
+			if (reg_y > reg_x)
+			{
+			    setReg(0xF, 1);
+			}
+			else
+			{
+			    setReg(0xF, 0);
+			}
+
+			setReg(x, (reg_y - reg_x));
+		    }
+		    break;
+		    // SHL Vx
+		    case 0xE:
+		    {
+			int reg_x = getReg(x);
+
+			// Set VF if bit 7 of Vx is 1
+			if (testbit(reg_x, 7))
+			{
+			    setReg(0xF, 1);
+			}
+			else
+			{
+			    setReg(0xF, 0);
+			}
+
+			// Set Vx equal to (Vx * 2)
+			setReg(x, (reg_x << 1));
+		    }
+		    break;
+		    default:
+		    {
+			cout << "Unrecognized opcode of " << hex << int(instr) << endl;
+			exit(1);
+		    }
+		    break;
+		}
+	    }
+	    break;
+	    // SNE Vx, Vy
+	    case 0x9:
+	    {
+		int reg_x = getReg(x);
+		int reg_y = getReg(y);
+
+		if (reg_x != reg_y)
+		{
+		    pc += 2;
+		}
+	    }
+	    break;
 	    // LD I, addr
 	    case 0xA:
 	    {
 		// Set I register to nnn
 		addr_I = nnn;
+	    }
+	    break;
+	    // JP V0, addr
+	    case 0xB:
+	    {
+		// Set PC to value of nnn plus V0
+		pc = (nnn + getReg(0));
 	    }
 	    break;
 	    // RND Vx, byte
@@ -340,8 +520,8 @@ namespace chip8
 		    {
 			bool is_sprite_pixel = testbit(sprite_byte, (7 - col));
 
-			int xpos = (xcoord + col);
-			int ypos = (ycoord + row);
+			int xpos = ((xcoord + col) % 64);
+			int ypos = ((ycoord + row) % 32);
 
 			// Fetch pixel at (xpos, ypos)
 			bool current_pixel = getPixel(xpos, ypos);
@@ -363,10 +543,50 @@ namespace chip8
 		}
 	    }
 	    break;
+	    case 0xE:
+	    {
+		switch (instrEF_op)
+		{
+		    case 0x9E:
+		    {
+			int key_val = getReg(x);
+
+			if (isPressed(key_val))
+			{
+			    pc += 2;
+			}
+		    }
+		    break;
+		    case 0xA1:
+		    {
+			int key_val = getReg(x);
+
+			if (!isPressed(key_val))
+			{
+			    pc += 2;
+			}
+		    }
+		    break;
+		    default:
+		    {
+			cout << "Unrecognized opcode of " << hex << int(instr) << endl;
+			exit(1);
+		    }
+		    break;
+		}
+	    }
+	    break;
 	    case 0xF:
 	    {
-		switch (instrF_op)
+		switch (instrEF_op)
 		{
+		    // LD Vx, DT
+		    case 0x07:
+		    {
+			// Set Vx to the value of the delay timer
+			setReg(x, delay_timer);
+		    }
+		    break;
 		    // LD Vx, K
 		    case 0x0A:
 		    {
@@ -391,6 +611,20 @@ namespace chip8
 			{
 			    pc -= 2;
 			}
+		    }
+		    break;
+		    // LD DT, Vx
+		    case 0x15:
+		    {
+			// Set delay timer equal to Vx
+			delay_timer = getReg(x);
+		    }
+		    break;
+		    // LD ST, Vx
+		    case 0x18:
+		    {
+			// Set sound timer equal to Vx
+			sound_timer = getReg(x);
 		    }
 		    break;
 		    // ADD I, Vx
@@ -503,13 +737,23 @@ namespace chip8
 
     void Chip8Core::runCore()
     {
-	core->runInstruction();
-	bool is_playing_sound = core->clockHardware();
-
-	if (front != NULL)
+	for (int i = 0; i < 10; i++)
 	{
-	    front->drawPixels();
-	    front->playAudio(is_playing_sound);
+	    core->runInstruction();
+	}
+
+	steps += 1;
+
+	if (steps == 2)
+	{
+	    steps = 0;
+	    bool is_playing_sound = core->clockHardware();
+
+	    if (front != NULL)
+	    {
+		front->drawPixels();
+		front->playAudio(is_playing_sound);
+	    }
 	}
     }
 

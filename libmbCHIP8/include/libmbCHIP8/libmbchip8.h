@@ -173,6 +173,8 @@ namespace chip8
 	private:
 	    mbCHIP8Frontend *front = NULL;
 	    unique_ptr<Chip8Logic> core;
+
+	    int steps = 0;
     };
 };
 
